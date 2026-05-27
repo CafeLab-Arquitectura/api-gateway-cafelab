@@ -46,6 +46,7 @@ spring:
               '[/**]':
                 allowedOrigins:
                   - "${FRONTEND_URL}"
+                  - "http://localhost:4200"
                 allowedMethods:
                   - GET
                   - POST
