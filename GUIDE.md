@@ -64,6 +64,46 @@ Todos los endpoints requieren JWT. El `userId` se extrae del token en el backend
 | | `GET` | `/api/v1/calibrations/user/{userId}/{calibrationId}` | Obtener calibración por id |
 | | `PUT` | `/api/v1/calibrations/user/{userId}/{calibrationId}` | Actualizar calibración |
 
+---
+
+### `management-service`
+URL Azure: `https://cafelab-management-h3csf4dzb0h5h8d0.canadacentral-01.azurewebsites.net`
+
+Todos los endpoints requieren JWT.
+
+| Dominio | Método | Path | Descripción |
+|---|---|---|---|
+| **Coffee Lots** | `POST` | `/api/v1/coffee-lots` | Crear lote de café |
+| | `GET` | `/api/v1/coffee-lots` | Listar todos los lotes |
+| | `GET` | `/api/v1/coffee-lots/{coffeeLotId}` | Obtener lote por id |
+| | `PUT` | `/api/v1/coffee-lots/{coffeeLotId}` | Actualizar lote |
+| | `DELETE` | `/api/v1/coffee-lots/{coffeeLotId}` | Eliminar lote |
+| | `PATCH` | `/api/v1/coffee-lots/{coffeeLotId}/status` | Actualizar estado del lote |
+| | `PATCH` | `/api/v1/coffee-lots/{coffeeLotId}/consume-stock` | Consumir stock del lote |
+| | `GET` | `/api/v1/coffee-lots/user/{userId}` | Lotes por usuario |
+| | `GET` | `/api/v1/coffee-lots/supplier/{supplierId}` | Lotes por proveedor |
+| | `GET` | `/api/v1/coffee-lots/status/{status}` | Lotes por estado |
+| | `GET` | `/api/v1/coffee-lots/processing-method/{processingMethod}` | Lotes por método de procesado |
+| | `GET` | `/api/v1/coffee-lots/origin/{origin}` | Lotes por origen |
+| | `GET` | `/api/v1/coffee-lots/coffee-type/{coffeeType}` | Lotes por tipo de café |
+| | `GET` | `/api/v1/coffee-lots/available` | Lotes disponibles |
+| | `GET` | `/api/v1/coffee-lots/depleted` | Lotes agotados |
+| **Suppliers** | `POST` | `/api/v1/suppliers` | Crear proveedor |
+| | `GET` | `/api/v1/suppliers` | Listar todos los proveedores |
+| | `GET` | `/api/v1/suppliers/{supplierId}` | Obtener proveedor por id |
+| | `PUT` | `/api/v1/suppliers/{supplierId}` | Actualizar proveedor |
+| | `DELETE` | `/api/v1/suppliers/{supplierId}` | Eliminar proveedor |
+| | `GET` | `/api/v1/suppliers/user/{userId}` | Proveedores por usuario |
+| | `GET` | `/api/v1/suppliers/status/{status}` | Proveedores por estado |
+| | `GET` | `/api/v1/suppliers/speciality/{speciality}` | Proveedores por especialidad |
+| **Roast Profiles** | `POST` | `/api/v1/roast-profiles` | Crear perfil de tueste |
+| | `GET` | `/api/v1/roast-profiles` | Listar todos los perfiles |
+| | `GET` | `/api/v1/roast-profiles/{roastProfileId}` | Obtener perfil por id |
+| | `PUT` | `/api/v1/roast-profiles/{roastProfileId}` | Actualizar perfil |
+| | `DELETE` | `/api/v1/roast-profiles/{roastProfileId}` | Eliminar perfil |
+| | `GET` | `/api/v1/roast-profiles/favorites` | Perfiles favoritos |
+| | `GET` | `/api/v1/roast-profiles/coffee-lot/{coffeeLotId}` | Perfiles por lote |
+
 > **Importante:** Spring Cloud Gateway usa WebFlux (programación reactiva).
 > **Nunca** agregues `spring-boot-starter-web` al proyecto — es incompatible con WebFlux.
 

@@ -26,6 +26,14 @@ spring:
               predicates:
                 - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/defects,/api/v1/defects/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**,/api/v1/calibrations,/api/v1/calibrations/**
 
+            # ── Management service ─────────────────────────────────────────
+            # Dominios: coffee-lots, suppliers, roast-profiles
+            # Todos los endpoints requieren JWT
+            - id: management-service
+              uri: ${MANAGEMENT_SERVICE_URL}
+              predicates:
+                - Path=/api/v1/coffee-lots,/api/v1/coffee-lots/**,/api/v1/suppliers,/api/v1/suppliers/**,/api/v1/roast-profiles,/api/v1/roast-profiles/**
+
             # ── Agrega aquí tus demás microservicios ───────────────────────
             # - id: otro-servicio
             #   uri: ${OTRO_SERVICE_URL}
