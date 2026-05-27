@@ -492,3 +492,5 @@ Una vez el Gateway esté operativo:
 - [Spring Security Reactive OAuth2 Resource Server](https://docs.spring.io/spring-security/reference/reactive/oauth2/resource-server/jwt.html)
 - [Tabla de compatibilidad Spring Boot / Spring Cloud](https://spring.io/projects/spring-cloud#overview)
 - [Azure App Service — Deploy Java](https://learn.microsoft.com/azure/app-service/quickstart-java)
+
+// add secrets
