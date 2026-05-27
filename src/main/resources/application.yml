@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: api-gateway-cafelab
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # ── Rutas ─────────────────────────────────────────────────────────
+          routes:
+
+            # ── IAM service (autenticación y perfiles) ─────────────────────
+            # Rutas públicas:  POST /sign-up, POST /sign-in, POST /profiles
+            # Rutas protegidas: GET|PATCH /profiles/**
+            - id: iam-service
+              uri: ${IAM_SERVICE_URL}
+              predicates:
+                # /api/v1/profiles (sin trailing slash) necesita su propia entrada
+                # /api/v1/profiles/** cubre /{userId} y ?email=...
+                - Path=/api/v1/authentication/**,/api/v1/profiles,/api/v1/profiles/**
+
+            # ── Procedures service ─────────────────────────────────────────
+            # Dominios: recipes, portfolios, defects, cupping-sessions, calibrations
+            # Todos los endpoints requieren JWT (userId / perfil extraídos del token)
+            - id: procedures-service
+              uri: ${PROCEDURES_SERVICE_URL}
+              predicates:
+                - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/defects,/api/v1/defects/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**,/api/v1/calibrations,/api/v1/calibrations/**
+
+            # ── Agrega aquí tus demás microservicios ───────────────────────
+            # - id: otro-servicio
+            #   uri: ${OTRO_SERVICE_URL}
+            #   predicates:
+            #     - Path=/api/otro/**
+
+          # ── CORS global ───────────────────────────────────────────────────
+          globalcors:
+            corsConfigurations:
+              '[/**]':
+                allowedOrigins:
+                  - "${FRONTEND_URL}"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
+                maxAge: 3600
+
+server:
+  port: 8080
+
+# Debe coincidir exactamente con la propiedad del iam-service
+authorization:
+  jwt:
+    secret: ${JWT_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: WARN
+    org.springframework.security: WARN
