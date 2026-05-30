@@ -108,6 +108,7 @@ cafelab:
       retries: 4
       initial-backoff: 3s
       max-backoff: 20s
+      response-timeout: 60s
 
 # Debe coincidir exactamente con la propiedad del iam-service
 authorization:
