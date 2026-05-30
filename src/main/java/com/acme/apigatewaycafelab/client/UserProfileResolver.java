@@ -22,11 +22,12 @@ public class UserProfileResolver {
     }
 
     public Mono<Long> resolveUserIdByEmail(String email, String authorizationHeader) {
-        if (email == null || email.isBlank()) {
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail == null) {
             return Mono.empty();
         }
 
-        Long cached = cacheByEmail.get(email);
+        Long cached = cacheByEmail.get(normalizedEmail);
         if (cached != null) {
             return Mono.just(cached);
         }
@@ -38,14 +39,21 @@ public class UserProfileResolver {
         return iamWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/v1/profiles")
-                        .queryParam("email", email)
+                        .queryParam("email", normalizedEmail)
                         .build())
                 .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
                 .retrieve()
-                .bodyToFlux(ProfileResponse.class)
-                .next()
+                .bodyToMono(ProfileResponse.class)
                 .map(ProfileResponse::id)
-                .doOnNext(userId -> cacheByEmail.put(email, userId))
+                .doOnNext(userId -> cacheByEmail.put(normalizedEmail, userId))
                 .onErrorResume(ex -> Mono.empty());
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        String normalized = email.trim().toLowerCase();
+        return normalized.isBlank() ? null : normalized;
     }
 }

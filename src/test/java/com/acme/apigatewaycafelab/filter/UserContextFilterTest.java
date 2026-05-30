@@ -45,32 +45,35 @@ class UserContextFilterTest {
     @Test
     void injectsUserIdFromJwtWithoutCallingIamTest() {
         Jwt jwt = jwtWithClaims(Map.of("userId", 5L));
-        MockServerWebExchange exchange = authenticatedExchange(jwt, "999");
+        MockServerWebExchange exchange = authenticatedExchange("/api/v1/costing/lot-performances", jwt, "999", "111");
 
         filter.filter(exchange, chain).block();
 
         var downstream = captureDownstreamExchange();
         assertEquals("user@test.com", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_USER_EMAIL));
         assertEquals("5", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_USER_ID));
+        assertEquals("5", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_PROFILE_ID));
+        assertEquals("Bearer token", downstream.getRequest().getHeaders().getFirst("Authorization"));
         verify(userProfileResolver, never()).resolveUserIdByEmail(any(), any());
     }
 
     @Test
     void stripsClientSpoofedHeadersBeforeInjectingFromJwtTest() {
         Jwt jwt = jwtWithClaims(Map.of("userId", 12L));
-        MockServerWebExchange exchange = authenticatedExchange(jwt, "777");
+        MockServerWebExchange exchange = authenticatedExchange("/api/v1/costing/lot-performances", jwt, "777", "888");
 
         filter.filter(exchange, chain).block();
 
         var downstream = captureDownstreamExchange();
         assertEquals("12", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_USER_ID));
+        assertEquals("12", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_PROFILE_ID));
         assertEquals("user@test.com", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_USER_EMAIL));
     }
 
     @Test
     void fallsBackToIamWhenJwtHasNoUserIdClaimTest() {
         Jwt jwt = jwtWithClaims(Map.of());
-        MockServerWebExchange exchange = authenticatedExchange(jwt, null);
+        MockServerWebExchange exchange = authenticatedExchange("/api/v1/costing/lot-performances", jwt, null, null);
         when(userProfileResolver.resolveUserIdByEmail("user@test.com", "Bearer token"))
                 .thenReturn(Mono.just(88L));
 
@@ -78,13 +81,14 @@ class UserContextFilterTest {
 
         var downstream = captureDownstreamExchange();
         assertEquals("88", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_USER_ID));
+        assertEquals("88", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_PROFILE_ID));
         verify(userProfileResolver).resolveUserIdByEmail("user@test.com", "Bearer token");
     }
 
     @Test
     void forwardsEmailOnlyWhenUserIdCannotBeResolvedTest() {
         Jwt jwt = jwtWithClaims(Map.of());
-        MockServerWebExchange exchange = authenticatedExchange(jwt, null);
+        MockServerWebExchange exchange = authenticatedExchange("/api/v1/costing/lot-performances", jwt, null, "999");
         when(userProfileResolver.resolveUserIdByEmail("user@test.com", "Bearer token"))
                 .thenReturn(Mono.empty());
 
@@ -93,6 +97,7 @@ class UserContextFilterTest {
         var downstream = captureDownstreamExchange();
         assertEquals("user@test.com", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_USER_EMAIL));
         assertNull(downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_USER_ID));
+        assertNull(downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_PROFILE_ID));
     }
 
     @Test
@@ -106,18 +111,37 @@ class UserContextFilterTest {
         verify(chain).filter(exchange);
     }
 
+    @Test
+    void doesNotInjectProfileAliasOutsideCostingRoutesTest() {
+        Jwt jwt = jwtWithClaims(Map.of("userId", 23L));
+        MockServerWebExchange exchange = authenticatedExchange("/api/v1/recipes", jwt, null, "555");
+
+        filter.filter(exchange, chain).block();
+
+        var downstream = captureDownstreamExchange();
+        assertEquals("23", downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_USER_ID));
+        assertNull(downstream.getRequest().getHeaders().getFirst(UserContextFilter.HEADER_PROFILE_ID));
+    }
+
     private ServerWebExchange captureDownstreamExchange() {
         ArgumentCaptor<ServerWebExchange> captor = ArgumentCaptor.forClass(ServerWebExchange.class);
         verify(chain).filter(captor.capture());
         return captor.getValue();
     }
 
-    private static MockServerWebExchange authenticatedExchange(Jwt jwt, String spoofedUserId) {
-        MockServerHttpRequest.BaseBuilder<?> builder = MockServerHttpRequest.get("/api/v1/costing/lot-performances")
+    private static MockServerWebExchange authenticatedExchange(
+            String path,
+            Jwt jwt,
+            String spoofedUserId,
+            String spoofedProfileId) {
+        MockServerHttpRequest.BaseBuilder<?> builder = MockServerHttpRequest.get(path)
                 .header("Authorization", "Bearer token")
                 .header(UserContextFilter.HEADER_USER_EMAIL, "spoof@test.com");
         if (spoofedUserId != null) {
             builder.header(UserContextFilter.HEADER_USER_ID, spoofedUserId);
+        }
+        if (spoofedProfileId != null) {
+            builder.header(UserContextFilter.HEADER_PROFILE_ID, spoofedProfileId);
         }
 
         return MockServerWebExchange.builder(builder.build())

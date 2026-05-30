@@ -28,6 +28,8 @@ public class UserContextFilter implements GlobalFilter, Ordered {
 
     static final String HEADER_USER_EMAIL = "X-User-Email";
     static final String HEADER_USER_ID = "X-User-Id";
+    static final String HEADER_PROFILE_ID = "X-Profile-Id";
+    private static final String COSTING_PATH_PREFIX = "/api/v1/costing";
 
     private static final Logger log = LoggerFactory.getLogger(UserContextFilter.class);
 
@@ -53,10 +55,11 @@ public class UserContextFilter implements GlobalFilter, Ordered {
         Jwt jwt = auth.getToken();
         String email = jwt.getSubject();
         String authorization = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        boolean costingRequest = isCostingRequest(exchange.getRequest());
 
         return resolveUserId(jwt, email, authorization)
-                .map(userId -> mutateRequest(exchange.getRequest(), email, userId))
-                .defaultIfEmpty(mutateRequest(exchange.getRequest(), email, null))
+                .map(userId -> mutateRequest(exchange.getRequest(), email, userId, costingRequest))
+                .defaultIfEmpty(mutateRequest(exchange.getRequest(), email, null, costingRequest))
                 .flatMap(mutatedRequest -> chain.filter(
                         exchange.mutate().request(mutatedRequest).build()).thenReturn(Boolean.TRUE));
     }
@@ -72,15 +75,28 @@ public class UserContextFilter implements GlobalFilter, Ordered {
         return userProfileResolver.resolveUserIdByEmail(email, authorization);
     }
 
-    private ServerHttpRequest mutateRequest(ServerHttpRequest request, String email, Long userId) {
+    private ServerHttpRequest mutateRequest(
+            ServerHttpRequest request,
+            String email,
+            Long userId,
+            boolean costingRequest) {
         return request.mutate().headers(headers -> {
             headers.remove(HEADER_USER_ID);
             headers.remove(HEADER_USER_EMAIL);
+            headers.remove(HEADER_PROFILE_ID);
             headers.set(HEADER_USER_EMAIL, email);
             if (userId != null) {
                 headers.set(HEADER_USER_ID, String.valueOf(userId));
+                if (costingRequest) {
+                    headers.set(HEADER_PROFILE_ID, String.valueOf(userId));
+                }
             }
         }).build();
+    }
+
+    private boolean isCostingRequest(ServerHttpRequest request) {
+        String path = request.getURI().getPath();
+        return path != null && (path.equals(COSTING_PATH_PREFIX) || path.startsWith(COSTING_PATH_PREFIX + "/"));
     }
 
     @Override
