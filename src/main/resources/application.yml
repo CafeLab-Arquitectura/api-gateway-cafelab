@@ -5,9 +5,33 @@ spring:
     gateway:
       server:
         webflux:
+          # Timeouts amplios para tolerar cold start de App Service sin Always On
+          httpclient:
+            connect-timeout: 15000
+            response-timeout: 60s
+
           # Filtro para que no se dupliquen los headers CORS
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin RETAIN_UNIQUE
+            # Reintenta errores de infraestructura (servicio despertando)
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT
+                backoff:
+                  firstBackoff: 3s
+                  maxBackoff: 20s
+                  factor: 2
+            # Reintenta 500 solo en GET (lecturas idempotentes durante cold start)
+            - name: Retry
+              args:
+                retries: 2
+                statuses: INTERNAL_SERVER_ERROR
+                methods: GET
+                backoff:
+                  firstBackoff: 3s
+                  maxBackoff: 15s
+                  factor: 2
 
           # ── Rutas ─────────────────────────────────────────────────────────
           routes:
@@ -76,6 +100,14 @@ spring:
 
 server:
   port: 8080
+
+# Reintentos al resolver userId vía IAM (fallback cuando el JWT no trae userId)
+cafelab:
+  gateway:
+    iam-lookup:
+      retries: 4
+      initial-backoff: 3s
+      max-backoff: 20s
 
 # Debe coincidir exactamente con la propiedad del iam-service
 authorization:
