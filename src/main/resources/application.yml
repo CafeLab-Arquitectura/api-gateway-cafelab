@@ -15,6 +15,7 @@ spring:
             # ── IAM service (autenticación y perfiles) ─────────────────────
             # Rutas públicas:  POST /sign-up, POST /sign-in, POST /profiles
             # Rutas protegidas: GET|PATCH /profiles/**
+            # JWT de sign-in incluye claim userId (profiles.id); el gateway lo propaga como X-User-Id.
             - id: iam-service
               uri: ${IAM_SERVICE_URL}
               predicates:
