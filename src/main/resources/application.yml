@@ -56,12 +56,12 @@ spring:
                 - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/defects,/api/v1/defects/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**,/api/v1/calibrations,/api/v1/calibrations/**
 
             # ── Management service ─────────────────────────────────────────
-            # Dominios: coffee-lots, suppliers, roast-profiles
+            # Dominios: coffee-lots, suppliers, roast-profiles, inventory-entries
             # Todos los endpoints requieren JWT
             - id: management-service
               uri: ${MANAGEMENT_SERVICE_URL}
               predicates:
-                - Path=/api/v1/coffee-lots,/api/v1/coffee-lots/**,/api/v1/suppliers,/api/v1/suppliers/**,/api/v1/roast-profiles,/api/v1/roast-profiles/**
+                - Path=/api/v1/coffee-lots,/api/v1/coffee-lots/**,/api/v1/suppliers,/api/v1/suppliers/**,/api/v1/roast-profiles,/api/v1/roast-profiles/**,/api/v1/inventory-entries,/api/v1/inventory-entries/**
 
             # ── IoT Monitoring service ─────────────────────────────────────
             # Dominios: data, histories, dashboard, simulator

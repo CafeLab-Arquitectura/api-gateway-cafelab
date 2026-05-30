@@ -41,11 +41,12 @@ public class UserProfileResolver {
     }
 
     public Mono<Long> resolveUserIdByEmail(String email, String authorizationHeader) {
-        if (email == null || email.isBlank()) {
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail == null) {
             return Mono.empty();
         }
 
-        Long cached = cacheByEmail.get(email);
+        Long cached = cacheByEmail.get(normalizedEmail);
         if (cached != null) {
             return Mono.just(cached);
         }
@@ -57,36 +58,21 @@ public class UserProfileResolver {
         return iamWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/v1/profiles")
-                        .queryParam("email", email)
+                        .queryParam("email", normalizedEmail)
                         .build())
                 .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
                 .retrieve()
-                .bodyToFlux(ProfileResponse.class)
-                .next()
+                .bodyToMono(ProfileResponse.class)
                 .map(ProfileResponse::id)
-                .doOnNext(userId -> cacheByEmail.put(email, userId))
-                .retryWhen(Retry.backoff(maxRetries, initialBackoff)
-                        .maxBackoff(maxBackoff)
-                        .filter(this::isTransientFailure)
-                        .doBeforeRetry(signal -> log.warn(
-                                "IAM profile lookup failed for {} (attempt {}), retrying: {}",
-                                email,
-                                signal.totalRetries() + 1,
-                                signal.failure().toString())))
-                .onErrorResume(ex -> {
-                    log.warn("IAM profile lookup exhausted retries for {}", email, ex);
-                    return Mono.empty();
-                });
+                .doOnNext(userId -> cacheByEmail.put(normalizedEmail, userId))
+                .onErrorResume(ex -> Mono.empty());
     }
 
-    private boolean isTransientFailure(Throwable throwable) {
-        if (throwable instanceof WebClientRequestException) {
-            return true;
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
         }
-        if (throwable instanceof WebClientResponseException responseException) {
-            HttpStatusCode status = responseException.getStatusCode();
-            return status.is5xxServerError();
-        }
-        return false;
+        String normalized = email.trim().toLowerCase();
+        return normalized.isBlank() ? null : normalized;
     }
 }
