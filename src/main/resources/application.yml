@@ -136,3 +136,6 @@ eureka:
   instance:
     prefer-ip-address: false
     hostname: ${WEBSITE_HOSTNAME:localhost}
+    secure-port-enabled: true
+    secure-port: 443
+    non-secure-port-enabled: false
