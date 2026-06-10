@@ -41,7 +41,7 @@ spring:
             # Rutas protegidas: GET|PATCH /profiles/**
             # JWT de sign-in incluye claim userId (profiles.id); el gateway lo propaga como X-User-Id.
             - id: iam-service
-              uri: ${IAM_SERVICE_URL}
+              uri: lb://iam-cafelab
               predicates:
                 # /api/v1/profiles (sin trailing slash) necesita su propia entrada
                 # /api/v1/profiles/** cubre /{userId} y ?email=...
@@ -51,7 +51,7 @@ spring:
             # Dominios: recipes, portfolios, defects, cupping-sessions, calibrations
             # Todos los endpoints requieren JWT (userId / perfil extraídos del token)
             - id: procedures-service
-              uri: ${PROCEDURES_SERVICE_URL}
+              uri: lb://Procedures-CafeLab
               predicates:
                 - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/defects,/api/v1/defects/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**,/api/v1/calibrations,/api/v1/calibrations/**
 
@@ -59,7 +59,7 @@ spring:
             # Dominios: coffee-lots, suppliers, roast-profiles, inventory-entries
             # Todos los endpoints requieren JWT
             - id: management-service
-              uri: ${MANAGEMENT_SERVICE_URL}
+              uri: lb://Management-CafeLab
               predicates:
                 - Path=/api/v1/coffee-lots,/api/v1/coffee-lots/**,/api/v1/suppliers,/api/v1/suppliers/**,/api/v1/roast-profiles,/api/v1/roast-profiles/**,/api/v1/inventory-entries,/api/v1/inventory-entries/**
 
@@ -67,7 +67,7 @@ spring:
             # Dominios: data, histories, dashboard, simulator
             # Todos los endpoints requieren JWT (userId desde token en el backend)
             - id: iot-monitoring-service
-              uri: ${IOT_MONITORING_SERVICE_URL}
+              uri: lb://iotmonitoring
               predicates:
                 - Path=/api/v1/iot-monitoring,/api/v1/iot-monitoring/**
 
@@ -75,7 +75,7 @@ spring:
             # Dominios: batches, lot-performances (costos, rentabilidad, US11/US14)
             # Todos los endpoints requieren JWT
             - id: costing-service
-              uri: ${COSTING_SERVICE_URL}
+              uri: lb://costing-cafelab
               predicates:
                 - Path=/api/v1/costing,/api/v1/costing/**
 
@@ -128,3 +128,11 @@ logging:
   level:
     org.springframework.cloud.gateway: WARN
     org.springframework.security: WARN
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URL:http://localhost:8761}/eureka
+  instance:
+    prefer-ip-address: false
+    hostname: ${WEBSITE_HOSTNAME:localhost}
