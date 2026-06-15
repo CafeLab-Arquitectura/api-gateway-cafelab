@@ -13,21 +13,12 @@ spring:
           # Filtro para que no se dupliquen los headers CORS
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin RETAIN_UNIQUE
-            # Reintenta errores de infraestructura (servicio despertando)
-            - name: Retry
-              args:
-                retries: 3
-                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT
-                backoff:
-                  firstBackoff: 3s
-                  maxBackoff: 20s
-                  factor: 2
-            # Reintenta 500 solo en GET (lecturas idempotentes durante cold start)
+            # Solo reintentar en métodos idempotentes (GET/HEAD) para no duplicar POST/PATCH/DELETE
             - name: Retry
               args:
                 retries: 2
-                statuses: INTERNAL_SERVER_ERROR
-                methods: GET
+                methods: GET,HEAD
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT,INTERNAL_SERVER_ERROR
                 backoff:
                   firstBackoff: 3s
                   maxBackoff: 15s
@@ -35,7 +26,6 @@ spring:
 
           # ── Rutas ─────────────────────────────────────────────────────────
           routes:
-
             # ── IAM service (autenticación y perfiles) ─────────────────────
             # Rutas públicas:  POST /sign-up, POST /sign-in, POST /profiles
             # Rutas protegidas: GET|PATCH /profiles/**
@@ -107,7 +97,7 @@ spring:
           # ── CORS global ───────────────────────────────────────────────────
           globalcors:
             corsConfigurations:
-              '[/**]':
+              "[/**]":
                 allowedOrigins:
                   - "${FRONTEND_URL}"
                   - "http://localhost:4200"
@@ -148,20 +138,23 @@ management:
   endpoint:
     health:
       show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
 
 # ── Circuit Breaker (Resilience4j) ────────────────────────────────────────────
 resilience4j:
   circuitbreaker:
     configs:
       default:
-        # Ventana de 10 llamadas; abre el CB si el 50% fallan
+        # Ventana de 20 llamadas; abre el CB si el 60% fallan (más tolerante a cold starts)
         slidingWindowType: COUNT_BASED
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        # 50s en estado OPEN antes de pasar a HALF_OPEN (margen para cold starts de Azure)
-        waitDurationInOpenState: 50s
-        # 3 llamadas de prueba en HALF_OPEN para verificar recuperación
-        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 20
+        failureRateThreshold: 60
+        # 90s en estado OPEN antes de pasar a HALF_OPEN (margen amplio para cold start de Azure)
+        waitDurationInOpenState: 90s
+        # 5 llamadas de prueba en HALF_OPEN para verificar recuperación
+        permittedNumberOfCallsInHalfOpenState: 5
         registerHealthIndicator: true
         recordExceptions:
           - java.io.IOException
