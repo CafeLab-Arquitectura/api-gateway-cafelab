@@ -42,6 +42,7 @@ public class UserContextFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         return exchange.getPrincipal()
+                .filter(p -> p instanceof JwtAuthenticationToken)
                 .cast(JwtAuthenticationToken.class)
                 .flatMap(auth -> enrichRequest(exchange, chain, auth))
                 .switchIfEmpty(Mono.defer(() -> chain.filter(exchange).thenReturn(Boolean.FALSE)))
