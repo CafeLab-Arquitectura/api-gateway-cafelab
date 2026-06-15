@@ -39,6 +39,9 @@ public class SecurityConfig {
                         // ── Health check de Actuator ────────────────────────────
                         .pathMatchers("/actuator/health").permitAll()
 
+                        // ── Fallbacks del Circuit Breaker (forward interno) ──────
+                        .pathMatchers("/fallback/**").permitAll()
+
                         // ── Todo lo demás requiere JWT válido ───────────────────
                         .anyExchange().authenticated()
                 )

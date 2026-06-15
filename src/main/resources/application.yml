@@ -46,6 +46,11 @@ spring:
                 # /api/v1/profiles (sin trailing slash) necesita su propia entrada
                 # /api/v1/profiles/** cubre /{userId} y ?email=...
                 - Path=/api/v1/authentication/**,/api/v1/profiles,/api/v1/profiles/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: iam-cb
+                    fallbackUri: forward:/fallback/iam
 
             # ── Procedures service ─────────────────────────────────────────
             # Dominios: recipes, portfolios, defects, cupping-sessions, calibrations
@@ -54,6 +59,11 @@ spring:
               uri: lb://Procedures-CafeLab
               predicates:
                 - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/defects,/api/v1/defects/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**,/api/v1/calibrations,/api/v1/calibrations/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: procedures-cb
+                    fallbackUri: forward:/fallback/procedures
 
             # ── Management service ─────────────────────────────────────────
             # Dominios: coffee-lots, suppliers, roast-profiles, inventory-entries
@@ -62,6 +72,11 @@ spring:
               uri: lb://Management-CafeLab
               predicates:
                 - Path=/api/v1/coffee-lots,/api/v1/coffee-lots/**,/api/v1/suppliers,/api/v1/suppliers/**,/api/v1/roast-profiles,/api/v1/roast-profiles/**,/api/v1/inventory-entries,/api/v1/inventory-entries/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: management-cb
+                    fallbackUri: forward:/fallback/management
 
             # ── IoT Monitoring service ─────────────────────────────────────
             # Dominios: data, histories, dashboard, simulator
@@ -70,6 +85,11 @@ spring:
               uri: lb://iotmonitoring
               predicates:
                 - Path=/api/v1/iot-monitoring,/api/v1/iot-monitoring/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: iot-monitoring-cb
+                    fallbackUri: forward:/fallback/iot-monitoring
 
             # ── Costing service ────────────────────────────────────────────
             # Dominios: batches, lot-performances (costos, rentabilidad, US11/US14)
@@ -78,6 +98,11 @@ spring:
               uri: lb://costing-cafelab
               predicates:
                 - Path=/api/v1/costing,/api/v1/costing/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: costing-cb
+                    fallbackUri: forward:/fallback/costing
 
           # ── CORS global ───────────────────────────────────────────────────
           globalcors:
@@ -119,10 +144,40 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,circuitbreakers
   endpoint:
     health:
       show-details: always
+
+# ── Circuit Breaker (Resilience4j) ────────────────────────────────────────────
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        # Ventana de 10 llamadas; abre el CB si el 50% fallan
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        # 50s en estado OPEN antes de pasar a HALF_OPEN (margen para cold starts de Azure)
+        waitDurationInOpenState: 50s
+        # 3 llamadas de prueba en HALF_OPEN para verificar recuperación
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.cloud.gateway.support.NotFoundException
+    instances:
+      iam-cb:
+        base-config: default
+      procedures-cb:
+        base-config: default
+      management-cb:
+        base-config: default
+      iot-monitoring-cb:
+        base-config: default
+      costing-cb:
+        base-config: default
 
 logging:
   level:

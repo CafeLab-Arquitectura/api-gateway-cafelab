@@ -86,6 +86,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Circuit Breaker reactivo con Resilience4j (WebFlux / Reactor) -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
