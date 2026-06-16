@@ -75,7 +75,7 @@ spring:
             - id: iot-monitoring-service
               uri: lb://iotmonitoring
               predicates:
-                - Path=/api/v1/iot-monitoring,/api/v1/iot-monitoring/**
+                - Path=/api/v1/iot-monitoring,/api/v1/iot-monitoring/**,/api/v1/telemetry-records,/api/v1/telemetry-records/**,/api/v1/environment-thresholds,/api/v1/environment-thresholds/**
               filters:
                 - name: CircuitBreaker
                   args:
