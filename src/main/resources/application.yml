@@ -31,7 +31,8 @@ spring:
             # Rutas protegidas: GET|PATCH /profiles/**
             # JWT de sign-in incluye claim userId (profiles.id); el gateway lo propaga como X-User-Id.
             - id: iam-service
-              uri: lb://iam-cafelab
+              # Fuerza HTTPS al resolver instancias Eureka (Azure App Service expone 443)
+              uri: lb:https://iam-cafelab
               predicates:
                 # /api/v1/profiles (sin trailing slash) necesita su propia entrada
                 # /api/v1/profiles/** cubre /{userId} y ?email=...
@@ -143,13 +144,23 @@ management:
       enabled: true
 
 # ── Circuit Breaker (Resilience4j) ────────────────────────────────────────────
+# El TimeLimiter por defecto de Resilience4j es ~1s; en Azure el IAM puede tardar más.
 resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 120s
+        cancelRunningFuture: true
+    instances:
+      iam-cb:
+        timeoutDuration: 120s
   circuitbreaker:
     configs:
       default:
         # Ventana de 20 llamadas; abre el CB si el 60% fallan (más tolerante a cold starts)
         slidingWindowType: COUNT_BASED
         slidingWindowSize: 20
+        minimumNumberOfCalls: 10
         failureRateThreshold: 60
         # 90s en estado OPEN antes de pasar a HALF_OPEN (margen amplio para cold start de Azure)
         waitDurationInOpenState: 90s
@@ -177,11 +188,15 @@ logging:
     org.springframework.cloud.gateway: WARN
     org.springframework.security: WARN
 
+spring.cloud.loadbalancer.cache:
+  ttl: 5s
+
 eureka:
   client:
     serviceUrl:
       defaultZone: ${EUREKA_URL:http://localhost:8761}/eureka
   instance:
+    instance-id: ${WEBSITE_HOSTNAME:localhost}:${spring.application.name}
     prefer-ip-address: false
     hostname: ${WEBSITE_HOSTNAME:localhost}
     secure-port-enabled: true
