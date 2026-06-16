@@ -38,11 +38,9 @@ public class SecurityAuditFilter implements WebFilter {
         return chain.filter(exchange)
                 .doFinally(signal -> {
                     var response = exchange.getResponse();
-                    Integer statusCode = response.getStatusCode() != null
-                            ? response.getStatusCode().value()
-                            : response.getRawStatusCode();
-                    if (statusCode == null) return;
+                    if (response.getStatusCode() == null) return;
 
+                    int statusCode = response.getStatusCode().value();
                     if (statusCode != 401 && statusCode != 403 && statusCode != 429) return;
 
                     ServerHttpRequest req = exchange.getRequest();
