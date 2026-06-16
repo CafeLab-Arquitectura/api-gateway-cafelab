@@ -185,6 +185,8 @@ resilience4j:
 
 logging:
   level:
+    # Logger dedicado de SecurityAuditFilter (401, 403, 429)
+    SECURITY_AUDIT: WARN
     org.springframework.cloud.gateway: WARN
     org.springframework.security: WARN
 

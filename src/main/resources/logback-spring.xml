@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!--
+      Canal dedicado para SecurityAuditFilter.
+      additivity=false evita duplicar la línea en el log general de la aplicación.
+      En Azure App Service las líneas llegan a Log stream vía stdout.
+    -->
+    <appender name="SECURITY_AUDIT_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} [SECURITY_AUDIT] %-5level %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="SECURITY_AUDIT" level="WARN" additivity="false">
+        <appender-ref ref="SECURITY_AUDIT_CONSOLE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
