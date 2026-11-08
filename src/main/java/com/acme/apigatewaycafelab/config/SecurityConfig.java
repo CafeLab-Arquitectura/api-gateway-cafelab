@@ -10,10 +10,17 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.server.authentication.ServerBearerTokenAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import reactor.core.publisher.Mono;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -23,10 +30,27 @@ public class SecurityConfig {
     @Value("${authorization.jwt.secret}")
     private String jwtSecret;
 
+    @Value("${FRONTEND_URL:http://localhost:4200}")
+    private String frontendUrl;
+
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+        ServerBearerTokenAuthenticationConverter defaultConverter = new ServerBearerTokenAuthenticationConverter();
+        ServerAuthenticationConverter publicAwareConverter = exchange -> {
+            String path = exchange.getRequest().getURI().getPath();
+            HttpMethod method = exchange.getRequest().getMethod();
+            if ((HttpMethod.POST.equals(method) && "/api/v1/profiles".equals(path))
+                    || path.startsWith("/api/v1/authentication/")
+                    || "/actuator/health".equals(path)
+                    || path.startsWith("/fallback/")) {
+                return Mono.empty();
+            }
+            return defaultConverter.convert(exchange);
+        };
+
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeExchange(exchanges -> exchanges
                         // Preflight CORS — el navegador envía OPTIONS antes de cada request
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -46,9 +70,24 @@ public class SecurityConfig {
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
+                        .bearerTokenConverter(publicAwareConverter)
                         .jwt(Customizer.withDefaults())
                 )
                 .build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(frontendUrl, "http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
