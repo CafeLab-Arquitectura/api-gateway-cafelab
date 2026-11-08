@@ -31,8 +31,7 @@ spring:
             # Rutas protegidas: GET|PATCH /profiles/**
             # JWT de sign-in incluye claim userId (profiles.id); el gateway lo propaga como X-User-Id.
             - id: iam-service
-              # Fuerza HTTPS al resolver instancias Eureka (Azure App Service expone 443)
-              uri: lb:https://iam-cafelab
+              uri: lb://iam-cafelab
               predicates:
                 # /api/v1/profiles (sin trailing slash) necesita su propia entrada
                 # /api/v1/profiles/** cubre /{userId} y ?email=...
@@ -100,7 +99,7 @@ spring:
             corsConfigurations:
               "[/**]":
                 allowedOrigins:
-                  - "${FRONTEND_URL}"
+                  - "${FRONTEND_URL:http://localhost:4200}"
                   - "http://localhost:4200"
                 allowedMethods:
                   - GET
@@ -129,7 +128,7 @@ cafelab:
 # Debe coincidir exactamente con la propiedad del iam-service
 authorization:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:local-dev-only-change-me-0123456789abcdef0123456789abcdef0123456789abcdef}
 
 management:
   endpoints:
@@ -201,6 +200,7 @@ eureka:
     instance-id: ${WEBSITE_HOSTNAME:localhost}:${spring.application.name}
     prefer-ip-address: false
     hostname: ${WEBSITE_HOSTNAME:localhost}
-    secure-port-enabled: true
+    secure-port-enabled: false
     secure-port: 443
-    non-secure-port-enabled: false
+    non-secure-port-enabled: true
+    non-secure-port: 8080

@@ -37,7 +37,7 @@ public class UserProfileResolver {
 
     @Autowired
     public UserProfileResolver(
-            @Value("${IAM_SERVICE_URL}") String iamServiceUrl,
+            @Value("${IAM_SERVICE_URL:http://localhost:8081}") String iamServiceUrl,
             @Value("${cafelab.gateway.iam-lookup.retries:4}") int maxRetries,
             @Value("${cafelab.gateway.iam-lookup.initial-backoff:3s}") Duration initialBackoff,
             @Value("${cafelab.gateway.iam-lookup.max-backoff:20s}") Duration maxBackoff,
