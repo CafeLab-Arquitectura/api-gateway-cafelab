@@ -41,6 +41,7 @@ public class SecurityConfig {
             HttpMethod method = exchange.getRequest().getMethod();
             if ((HttpMethod.POST.equals(method) && "/api/v1/profiles".equals(path))
                     || path.startsWith("/api/v1/authentication/")
+                    || (HttpMethod.GET.equals(method) && path.startsWith("/api/v1/coffee-lots"))
                     || "/actuator/health".equals(path)
                     || path.startsWith("/fallback/")) {
                 return Mono.empty();
@@ -59,6 +60,9 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/api/v1/authentication/sign-in").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/authentication/sign-up").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/profiles").permitAll()
+
+                        // ── Rutas públicas de consulta de lotes (para IoT y backend interno) ──
+                        .pathMatchers(HttpMethod.GET, "/api/v1/coffee-lots", "/api/v1/coffee-lots/**").permitAll()
 
                         // ── Health check de Actuator ────────────────────────────
                         .pathMatchers("/actuator/health").permitAll()
