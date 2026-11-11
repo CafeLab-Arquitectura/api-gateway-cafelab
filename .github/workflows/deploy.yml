@@ -1,0 +1,50 @@
+name: CI/CD - Deploy to Oracle Cloud
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests -B
+
+      - name: Transfer JAR to Oracle Cloud VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          source: "target/*.jar"
+          target: "/home/opc/cafelab-stack/gateway/"
+          strip_components: 1
+
+      - name: Redeploy container on Oracle Cloud
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            cd /home/opc/cafelab-stack/gateway
+            mv -f target/*.jar app.jar || mv -f *.jar app.jar
+            rm -rf target
+            cd /home/opc/cafelab-stack
+            sudo docker compose up -d --build api-gateway
