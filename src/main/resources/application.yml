@@ -43,17 +43,30 @@ spring:
                     fallbackUri: forward:/fallback/iam
 
             # ── Procedures service ─────────────────────────────────────────
-            # Dominios: recipes, portfolios, defects, cupping-sessions, calibrations
+            # Dominios: recipes, portfolios, defects, cupping-sessions
             # Todos los endpoints requieren JWT (userId / perfil extraídos del token)
             - id: procedures-service
               uri: lb://Procedures-CafeLab
               predicates:
-                - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/defects,/api/v1/defects/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**,/api/v1/calibrations,/api/v1/calibrations/**
+                - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/defects,/api/v1/defects/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**
               filters:
                 - name: CircuitBreaker
                   args:
                     name: procedures-cb
                     fallbackUri: forward:/fallback/procedures
+
+            # ── Calibrations service ───────────────────────────────────────
+            # Dominios: calibrations (calibraciones de molienda y perfiles de preparación)
+            # Todos los endpoints requieren JWT
+            - id: calibrations-service
+              uri: lb://Calibrations-CafeLab
+              predicates:
+                - Path=/api/v1/calibrations,/api/v1/calibrations/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: calibrations-cb
+                    fallbackUri: forward:/fallback/calibrations
 
             # ── Management service ─────────────────────────────────────────
             # Dominios: coffee-lots, suppliers, roast-profiles, inventory-entries

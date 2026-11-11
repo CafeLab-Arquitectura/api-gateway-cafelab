@@ -61,6 +61,11 @@ public class FallbackController {
         return fallback("costing-cafelab");
     }
 
+    @RequestMapping("/calibrations")
+    public Mono<ResponseEntity<?>> calibrationsFallback() {
+        return fallback("Calibrations-CafeLab");
+    }
+
     private Mono<ResponseEntity<?>> fallback(String service) {
         return Mono.just(ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
