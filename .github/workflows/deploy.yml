@@ -44,7 +44,7 @@ jobs:
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
             cd /home/opc/cafelab-stack/gateway
-            mv -f target/*.jar app.jar || mv -f *.jar app.jar
+            find . -maxdepth 2 -name "*.jar" ! -name "app.jar" -exec mv -f {} app.jar \;
             rm -rf target
             cd /home/opc/cafelab-stack
             sudo docker compose up -d --build api-gateway
