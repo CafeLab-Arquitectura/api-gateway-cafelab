@@ -104,6 +104,20 @@ Todos los endpoints requieren JWT.
 | | `GET` | `/api/v1/roast-profiles/favorites` | Perfiles favoritos |
 | | `GET` | `/api/v1/roast-profiles/coffee-lot/{coffeeLotId}` | Perfiles por lote |
 
+---
+
+### `document-autofill-service`
+Servicio Python (FastAPI) que lee guías de remisión con Document AI y devuelve sugerencias para el formulario de lote. No escribe en Management.
+
+- **No se registra en Eureka:** la ruta usa una URL fija, `${DOCUMENT_AUTOFILL_URL:http://localhost:8000}` (sin `lb://`). Hay que definir `DOCUMENT_AUTOFILL_URL` donde corra el Gateway.
+- Requiere JWT. El servicio confía en el `X-User-Id` que inyecta `UserContextFilter`.
+- Acepta multipart de hasta 10 MB: el Gateway no lee el body, lo reenvía en streaming.
+- El `Retry` global solo aplica a GET/HEAD, así que este POST no se reintenta en el Gateway. El servicio ya hace su propio reintento ante Document AI.
+
+| Dominio | Método | Path | Descripción |
+|---|---|---|---|
+| **Documents** | `POST` | `/api/v1/documents/autofill` | Sube una guía (JPG, PNG o PDF de 1 página, campo `file`) y devuelve los datos del lote como sugerencias |
+
 > **Importante:** Spring Cloud Gateway usa WebFlux (programación reactiva).
 > **Nunca** agregues `spring-boot-starter-web` al proyecto — es incompatible con WebFlux.
 

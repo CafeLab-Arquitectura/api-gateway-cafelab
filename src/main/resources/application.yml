@@ -107,6 +107,22 @@ spring:
                     name: costing-cb
                     fallbackUri: forward:/fallback/costing
 
+            # ── Document Autofill service (Python / FastAPI) ───────────────
+            # Servicio técnico de apoyo: lee guías de remisión con Document AI y devuelve
+            # sugerencias para el formulario de lote. No escribe en Management.
+            # No se registra en Eureka: URL fija tomada de DOCUMENT_AUTOFILL_URL (sin lb://).
+            # Requiere JWT; el servicio confía en el X-User-Id que inyecta UserContextFilter.
+            # Recibe multipart de hasta 10 MB: el gateway no lee el body, lo reenvía en streaming.
+            - id: document-autofill-service
+              uri: ${DOCUMENT_AUTOFILL_URL:http://localhost:8000}
+              predicates:
+                - Path=/api/v1/documents/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: document-autofill-cb
+                    fallbackUri: forward:/fallback/document-autofill
+
           # ── CORS global ───────────────────────────────────────────────────
           globalcors:
             corsConfigurations:
@@ -192,6 +208,8 @@ resilience4j:
       iot-monitoring-cb:
         base-config: default
       costing-cb:
+        base-config: default
+      document-autofill-cb:
         base-config: default
 
 logging:

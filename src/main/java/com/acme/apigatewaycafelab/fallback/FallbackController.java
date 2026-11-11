@@ -66,6 +66,11 @@ public class FallbackController {
         return fallback("Calibrations-CafeLab");
     }
 
+    @RequestMapping("/document-autofill")
+    public Mono<ResponseEntity<?>> documentAutofillFallback() {
+        return fallback("document-autofill-cafelab");
+    }
+
     private Mono<ResponseEntity<?>> fallback(String service) {
         return Mono.just(ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
