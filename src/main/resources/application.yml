@@ -98,9 +98,8 @@ spring:
           globalcors:
             corsConfigurations:
               "[/**]":
-                allowedOrigins:
-                  - "${FRONTEND_URL:http://localhost:4200}"
-                  - "http://localhost:4200"
+                allowedOriginPatterns:
+                  - "*"
                 allowedMethods:
                   - GET
                   - POST
