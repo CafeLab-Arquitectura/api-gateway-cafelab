@@ -26,25 +26,19 @@ jobs:
           chmod +x mvnw
           ./mvnw clean package -DskipTests -B
 
-      - name: Transfer JAR to Oracle Cloud VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USERNAME }}
-          key: ${{ secrets.OCI_SSH_KEY }}
-          source: "target/*.jar"
-          target: "/home/opc/cafelab-stack/gateway/"
-          strip_components: 1
-
-      - name: Redeploy container on Oracle Cloud
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USERNAME }}
-          key: ${{ secrets.OCI_SSH_KEY }}
-          script: |
-            cd /home/opc/cafelab-stack/gateway
-            find . -maxdepth 2 -name "*.jar" ! -name "app.jar" -exec mv -f {} app.jar \;
-            rm -rf target
-            cd /home/opc/cafelab-stack
-            sudo docker compose up -d --build api-gateway
+      - name: Deploy to Oracle Cloud VM
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_USERNAME: ${{ secrets.OCI_USERNAME }}
+          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s\n" "$OCI_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$OCI_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          
+          # Copiar artefacto renombrado a app.jar
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no target/*.jar "$OCI_USERNAME@$OCI_HOST:/home/opc/cafelab-stack/gateway/app.jar"
+          
+          # Reconstruir contenedor en la VM
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$OCI_USERNAME@$OCI_HOST" "cd /home/opc/cafelab-stack && sudo docker compose up -d --build api-gateway"
