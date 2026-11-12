@@ -42,18 +42,30 @@ spring:
                     name: iam-cb
                     fallbackUri: forward:/fallback/iam
 
+            # ── Eureka Server (acceso para clientes externos) ───────────────
+            - id: eureka-server-route
+              uri: http://eureka-server:8761
+              predicates:
+                - Path=/eureka/**
+
             # ── Procedures service ─────────────────────────────────────────
-            # Dominios: recipes, portfolios, defects, cupping-sessions
+            # Dominios: recipes, portfolios, cupping-sessions
             # Todos los endpoints requieren JWT (userId / perfil extraídos del token)
             - id: procedures-service
               uri: lb://Procedures-CafeLab
               predicates:
-                - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/defects,/api/v1/defects/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**
+                - Path=/api/v1/recipes,/api/v1/recipes/**,/api/v1/portfolios,/api/v1/portfolios/**,/api/v1/cupping-sessions,/api/v1/cupping-sessions/**
               filters:
                 - name: CircuitBreaker
                   args:
                     name: procedures-cb
                     fallbackUri: forward:/fallback/procedures
+
+            # ── Defects service (desplegado en Azure) ───────────────────────
+            - id: defects-service
+              uri: https://defects-cafelab-e6bqarchf5dxd7h0.chilecentral-01.azurewebsites.net
+              predicates:
+                - Path=/api/v1/defects,/api/v1/defects/**
 
             # ── Calibrations service ───────────────────────────────────────
             # Dominios: calibrations (calibraciones de molienda y perfiles de preparación)

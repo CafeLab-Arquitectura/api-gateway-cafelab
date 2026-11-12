@@ -43,7 +43,8 @@ public class SecurityConfig {
                     || path.startsWith("/api/v1/authentication/")
                     || (HttpMethod.GET.equals(method) && path.startsWith("/api/v1/coffee-lots"))
                     || "/actuator/health".equals(path)
-                    || path.startsWith("/fallback/")) {
+                    || path.startsWith("/fallback/")
+                    || path.startsWith("/eureka/")) {
                 return Mono.empty();
             }
             return defaultConverter.convert(exchange);
@@ -69,6 +70,9 @@ public class SecurityConfig {
 
                         // ── Fallbacks del Circuit Breaker (forward interno) ──────
                         .pathMatchers("/fallback/**").permitAll()
+
+                        // ── Eureka Server público para microservicios externos ──
+                        .pathMatchers("/eureka/**").permitAll()
 
                         // ── Todo lo demás requiere JWT válido ───────────────────
                         .anyExchange().authenticated()
