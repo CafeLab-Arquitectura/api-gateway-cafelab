@@ -126,7 +126,7 @@ spring:
             # Requiere JWT; el servicio confía en el X-User-Id que inyecta UserContextFilter.
             # Recibe multipart de hasta 10 MB: el gateway no lee el body, lo reenvía en streaming.
             - id: document-autofill-service
-              uri: ${DOCUMENT_AUTOFILL_URL:http://localhost:8000}
+              uri: ${DOCUMENT_AUTOFILL_URL:https://document-autofill-cafelab-fdezc5cwfjh3eshd.chilecentral-01.azurewebsites.net}
               predicates:
                 - Path=/api/v1/documents/**
               filters:
